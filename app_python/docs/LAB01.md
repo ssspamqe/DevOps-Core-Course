@@ -108,3 +108,9 @@ Used for health checks.
 ## GitHub Community
 
 I have starred the course repo and the recommended container project. Starring helps open source projects by giving them visibility and showing appreciation to the maintainers. Following developers is great because you can see what they are working on, learn from their code, and it helps in building a network in the tech community.
+
+## 6. Screenshots
+
+![GET /](screenshots/lab01/get.png)
+
+![GET /health](screenshots/lab01/get-health.png)

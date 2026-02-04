@@ -110,3 +110,25 @@ The application can be configured using environment variables:
 | `HOST`   | Host to bind to | `0.0.0.0` |
 | `PORT`   | Port to listen on | `8080` |
 | `DEBUG`  | Enable debug mode | `False` |
+
+## Docker
+
+You can also run this application as a Docker container.
+
+### 1. Build the Image
+To build the Docker image locally, run:
+```bash
+docker build -t <image_name> .
+```
+
+### 2. Run the Container
+To run the container and map the ports:
+```bash
+docker run -p <host_port>:8080 <image_name>
+```
+
+### 3. Pull from Docker Hub
+To pull the pre-built image from Docker Hub:
+```bash
+docker pull ssspamqe/lab2_app_python:ssspamqe
+```
