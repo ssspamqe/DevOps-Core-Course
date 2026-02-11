@@ -40,6 +40,19 @@ To run with custom configuration:
 PORT=8080 python app.py
 ```
 
+## Running Tests
+To run the automated tests with code coverage:
+
+1. Install test dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Run tests with coverage report:
+   ```bash
+   pytest --cov=. tests/
+   ```
+
 ## API Endpoints
 
 ### `GET /`
