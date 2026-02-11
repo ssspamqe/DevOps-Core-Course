@@ -12,3 +12,5 @@ venv/
 .DS_Store
 
 .coverage
+
+.pytest_cache/

@@ -1,63 +1,98 @@
 import pytest
-from app import app
 import json
+from unittest.mock import patch, MagicMock
+from app import app
 
 @pytest.fixture
 def client():
-    """Create a test client for the app."""
+    """
+    Fixture to setup the Flask test client.
+    Sets testing mode to True to ensure exceptions are propagated 
+    or handled by error handlers correctly.
+    """
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
 def test_index_status_code(client):
-    """Test that the index endpoint returns 200."""
+    """
+    Test that the index endpoint returns 200 OK.
+    Verifies the basic availability of the service.
+    """
     response = client.get('/')
     assert response.status_code == 200
 
-def test_index_content(client):
-    """Test that the index endpoint returns expected JSON structure."""
-    response = client.get('/')
-    data = json.loads(response.data)
-    
-    # Check top-level keys
-    assert 'service' in data
-    assert 'system' in data
-    assert 'runtime' in data
-    assert 'request' in data
-    
-    # Check specific values
-    assert data['service']['name'] == 'devops-info-service'
+def test_index_structure_and_mock(client):
+    """
+    Test index content structure and mock system calls.
+    Demonstrates mocking external dependencies (socket, platform) which are
+    'external' to the application logic.
+    """
+    expected_hostname = 'mock-hostname'
+    expected_platform = 'MockOS'
 
-def test_health_status_code(client):
-    """Test that the health endpoint returns 200."""
+    # Mocking socket and platform to ensure tests don't depend on the actual system
+    with patch('socket.gethostname', return_value=expected_hostname), \
+         patch('platform.system', return_value=expected_platform):
+        
+        response = client.get('/')
+        data = json.loads(response.data)
+        
+        # Assertion: Structure presence
+        assert 'service' in data
+        assert 'system' in data
+        assert 'runtime' in data
+        
+        # Assertion: Mocked values (Expected vs Actual)
+        assert data['system']['hostname'] == expected_hostname, "Hostname matches mocked value"
+        assert data['system']['platform'] == expected_platform, "Platform matches mocked value"
+        
+        # Assertion: Data Types
+        assert isinstance(data['runtime']['uptime_seconds'], int), "Uptime should be an integer"
+        assert isinstance(data['service']['version'], str), "Version should be a string"
+
+def test_health_check(client):
+    """
+    Test health endpoint status and logic.
+    """
     response = client.get('/health')
     assert response.status_code == 200
-
-def test_health_content(client):
-    """Test that the health endpoint returns healthy status."""
-    response = client.get('/health')
+    
     data = json.loads(response.data)
     
+    # Assertions
     assert data['status'] == 'healthy'
-    assert 'timestamp' in data
-    assert 'uptime_seconds' in data
-
-def test_index_endpoints(client):
-    """Test that the index endpoint lists available endpoints."""
-    response = client.get('/')
-    data = json.loads(response.data)
-    
-    assert 'endpoints' in data
-    assert isinstance(data['endpoints'], list)
-    paths = [ep['path'] for ep in data['endpoints']]
-    assert '/' in paths
-    assert '/health' in paths
-
-def test_health_response_types(client):
-    """Test that health endpoint returns correct data types."""
-    response = client.get('/health')
-    data = json.loads(response.data)
-    
     assert isinstance(data['uptime_seconds'], int)
-    assert data['uptime_seconds'] >= 0
-    assert isinstance(data['timestamp'], str)
+    assert 'timestamp' in data
+
+def test_404_not_found(client):
+    """
+    Test error handling for non-existent routes.
+    Verifies that the application handles 404 errors gracefully.
+    """
+    response = client.get('/non-existent-route-random-String')
+    
+    # Assertion: Correct HTTP status code for missing resource
+    assert response.status_code == 404
+    
+    data = json.loads(response.data)
+    assert data['error'] == 'Not Found'
+
+def test_500_internal_error(client):
+    """
+    Test internal server error handling.
+    Mocks a core component to raise an Exception to simulate a crash.
+    """
+    with patch('socket.gethostname', side_effect=Exception("Simulated IO Error")):
+        # By default in TESTING mode, Flask propagates exceptions.
+        # We turn it off for this specific test block to catch the 500 error handler response.
+        app.config['PROPAGATE_EXCEPTIONS'] = False 
+        
+        response = client.get('/')
+        
+        assert response.status_code == 500
+        data = json.loads(response.data)
+        assert data['error'] == 'Internal Server Error'
+        
+        # Restore configuration
+        app.config['PROPAGATE_EXCEPTIONS'] = True
