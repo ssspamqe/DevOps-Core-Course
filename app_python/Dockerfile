@@ -4,11 +4,14 @@ RUN adduser -D -u 1001 appuser
 
 WORKDIR /app
 
+ARG VERSION=1.0.0
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     HOST=0.0.0.0 \
     PORT=8080 \
-    DEBUG=False
+    DEBUG=False \
+    VERSION=${VERSION}
 
 COPY requirements.txt .
 
