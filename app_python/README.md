@@ -1,6 +1,7 @@
 # DevOps Info Service
 
 [![Python Application CI/CD](https://github.com/ssspamqe/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg)](https://github.com/ssspamqe/DevOps-Core-Course/actions/workflows/python-ci.yml)
+[![Go Application](https://github.com/ssspamqe/DevOps-Core-Course/actions/workflows/go-ci.yml/badge.svg)]([app_go/](https://github.com/ssspamqe/DevOps-Core-Course/actions/workflows/python-ci.yml))
 
 ## Overview
 DevOps Info Service is a simple Python web application built with Flask. It provides information about the system it is running on and its own health status.

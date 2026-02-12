@@ -17,7 +17,9 @@
 *   ✅ **Docker Image:** [ssspamqe/devops-info-service](https://hub.docker.com/r/ssspamqe/devops-info-service)
 *   ✅ **Tests Passing Locally:**
     ![Tests](./screenshots/lab03/passing-tests.png)
-*   ✅ **Status Badge:** Added to [app_python/README.md](../app_python/README.md).
+*   ✅ **Status Badge:** 
+    Added to README.md file:
+    ![Badges](./screenshots/lab03/badges.png)
 
 ## 3. Best Practices Implemented
 
