@@ -39,3 +39,23 @@
 ## 5. Challenges
 *   **Version Injection:** Passing the version from the CI environment into the Docker container required using Docker Build Arguments (`ARG`/`ENV`) instead of just environment variables, as the build step happens in isolation.
 *   **Monorepo Pathing:** Configuring linting and testing commands required careful directory management (`cd app_python`) to find the correct files.
+
+## 6. Security Analysis (Snyk)
+We integrated Snyk into our CI pipeline to continuously monitor our dependencies for security vulnerabilities.
+Upon the initial scan, Snyk detected **3 issues** across **18 tested dependencies**.
+
+### Vulnerabilities Found:
+1.  **Direct Dependency:** `flask@3.1.0`
+    *   **Issue:** Function Call With Incorrect Order of Arguments [Low Severity]
+    *   **Fix:** Upgrade to `flask@3.1.1`
+2.  **Transitive Dependency (via `gunicorn`):** `gunicorn@21.2.0`
+    *   **Issue:** HTTP Request Smuggling [High Severity] (Two occurrences)
+    *   **Fix:** Upgrade to `gunicorn@23.0.0`
+
+### Remediation:
+We updated `requirements.txt` to use the secure versions:
+-   `Flask==3.1.1`
+-   `gunicorn==23.0.0`
+
+After applying these fixes, the Snyk scan passes successfully and the pipeline is secure.
+
