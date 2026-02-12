@@ -2,7 +2,7 @@ name: Go Application CI/CD
 
 on:
   push:
-    branches: [ "main", "lab03" ]
+    branches: [ "main" ]
     paths:
       - 'app_go/**'
       - '.github/workflows/go-ci.yml'
@@ -49,7 +49,7 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Build and push Docker image
@@ -59,6 +59,6 @@ jobs:
         file: ./app_go/Dockerfile.multistage
         push: true
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/devops-go-app:latest
-        cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/devops-go-app:buildcache
-        cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/devops-go-app:buildcache,mode=max
+          ${{ secrets.DOCKERHUB_USERNAME }}/devops-go-app:latest
+        cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/devops-go-app:buildcache
+        cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/devops-go-app:buildcache,mode=max
