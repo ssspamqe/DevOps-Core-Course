@@ -2,7 +2,7 @@ name: Python Application CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "lab03" ]
     paths:
       - 'app_python/**'
       - '.github/workflows/python-ci.yml'
