@@ -1,0 +1,12 @@
+# Git
+.git
+.gitignore
+
+# Go
+bin/
+pkg/
+go.sum
+app
+# Exclude markdown docs and screenshots from the build context
+docs/
+README.md
