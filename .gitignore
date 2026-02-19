@@ -1,1 +1,13 @@
 test
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+
+# Pulumi
+pulumi/.pulumi/
+pulumi/Pulumi.*.yaml
+pulumi/venv/
+pulumi/.venv/
