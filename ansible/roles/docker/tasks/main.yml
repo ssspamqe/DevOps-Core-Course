@@ -2,6 +2,9 @@
 # Docker role tasks — install Docker CE on Ubuntu
 
 - name: Docker Installation Block
+  tags:
+    - docker
+    - docker_install
   block:
     - name: Install required packages for Docker repository
       ansible.builtin.apt:
@@ -26,12 +29,12 @@
 
     - name: Get architecture
       ansible.builtin.command: dpkg --print-architecture
-      register: dpkg_arch
+      register: docker_architecture
       changed_when: false
 
     - name: Add Docker repository
       ansible.builtin.apt_repository:
-        repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+        repo: "deb [arch={{ docker_architecture.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
         state: present
         filename: docker
 
@@ -39,8 +42,8 @@
       ansible.builtin.apt:
         name: "{{ docker_packages | default(['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']) }}"
         state: present
-        update_cache: yes
-      notify: restart docker
+        update_cache: true
+      notify: Restart docker
 
   rescue:
     - name: Wait for transient network issues
@@ -48,7 +51,7 @@
         seconds: 10
     - name: Retry updating apt cache
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
     - name: Retry installing Docker packages
       ansible.builtin.apt:
         name: "{{ docker_packages | default(['docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']) }}"
@@ -59,25 +62,21 @@
       ansible.builtin.service:
         name: docker
         state: started
-        enabled: yes
-
-  tags:
-    - docker
-    - docker_install
+        enabled: true
 
 - name: Docker Configuration Block
+  tags:
+    - docker
+    - docker_config
   block:
     - name: Add user to docker group
       ansible.builtin.user:
         name: "{{ docker_user | default('ubuntu') }}"
         groups: docker
-        append: yes
+        append: true
 
     - name: Install python3-docker for Ansible docker modules
       ansible.builtin.apt:
         name: python3-docker
         state: present
 
-  tags:
-    - docker
-    - docker_config

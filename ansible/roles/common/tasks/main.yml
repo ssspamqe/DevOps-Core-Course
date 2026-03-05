@@ -5,7 +5,7 @@
   block:
     - name: Update apt cache
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
         cache_valid_time: 3600
 
     - name: Install common packages
@@ -17,32 +17,36 @@
     - name: Fix missing packages
       ansible.builtin.command: apt-get update --fix-missing
       when: ansible_os_family == "Debian"
+      changed_when: true
 
   always:
     - name: Log package installation attempt
       ansible.builtin.file:
-        path: /tmp/common_role_executed
+        path: "/tmp/common_role_executed"
         state: touch
+        mode: "0644"
   tags:
     - packages
     - common
 
 - name: User management block
+  tags:
+    - users
+    - common
   block:
     - name: Create sudo user
       ansible.builtin.user:
         name: devops
         groups: sudo
-        append: yes
+        append: true
         shell: /bin/bash
-  tags:
-    - users
-    - common
 
 - name: System configuration block
+  tags:
+    - common
   block:
     - name: Set timezone
       community.general.timezone:
-        name: "{{ timezone | default('UTC') }}"
+        name: "{{ common_timezone | default('UTC') }}"
   tags:
     - common
