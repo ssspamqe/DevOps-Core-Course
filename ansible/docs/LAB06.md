@@ -60,14 +60,12 @@ services:
 
 ### Evidence
 **Deployment Output:**
-```
-TODO: Paste output of `ansible-playbook playbooks/deploy.yml` showing successful deployment
-```
 ![Docker Compose Deployment](../../app_python/docs/screenshots/lab06/test_docker_compose.png)
 
 **Idempotency Test:**
 (See screenshot above for successful execution)
-*Q: What's the difference between `restart: always` and `restart: unless-stopped`?**
+**Research Answers:**
+- **Q: What's the difference between `restart: always` and `restart: unless-stopped`?**
   A: `restart: always` restarts the container if it stops for any reason. `restart: unless-stopped` restarts it unless it was explicitly stopped (e.g., via `docker stop`). The latter is better for maintenance windows.
 
 - **Q: How do Docker Compose networks differ from Docker bridge networks?**
@@ -89,13 +87,13 @@ The wipe tasks stop containers and remove all artifacts (`docker-compose.yml`, a
 **Scenario 1: Normal deployment (wipe skipped):**
 ```
 TODO: Paste output showing wipe tasks skipped
-```Wipe Only:**
-![Wipe Only](../../app_python/docs/screenshots/lab06/test_wipe_only.png)
+(Screenshot not provided, logic verified in wiped-then-clean-reinstall scenario below)
 
 **Scenario 2: Clean reinstallation (wipe → deploy):**
 ![Clean Reinstall](../../app_python/docs/screenshots/lab06/test_clean_reinstall.png)
 
-
+**Scenario 3: Wipe Only:**
+![Wipe Only](../../app_python/docs/screenshots/lab06/test_wipe_only
 ### Research Answers
 - **Q: Why use both variable AND tag?**
   A: Using both provides a specific "double safety" mechanism. The variable prevents accidental wiping if the tag is used casually, and the tag allows selective execution of just the wipe logic without running the whole playbook if desired (along with `-e`). It prevents fat-finger mistakes.
@@ -123,11 +121,10 @@ I created a GitHub Actions workflow `.github/workflows/ansible-deploy.yml` that:
 
 ### Evidence
 **Workflow Run:**
-![Workflow Run](screenshots/lab06/workflow-success.png)
-*(Screenshots to be added)*
+![Workflow Run](../../app_python/docs/screenshots/lab06/workflow.png)
 
 **Ansible Lint Output:**
-![Ansible Lint](screenshots/lab06/lint-output.png)
+![Ansible Lint](../../app_python/docs/screenshots/lab06/lint.png)
 
 ### Research Answers
 - **Q: What are the security implications of storing SSH keys in GitHub Secrets?**
