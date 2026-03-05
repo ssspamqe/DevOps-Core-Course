@@ -28,10 +28,15 @@ jobs:
         run: |
           pip install ansible ansible-lint
 
+      - name: Create Vault Pass File
+        run: |
+           echo "password" > ansible/.vault_pass
+
       - name: Run ansible-lint
         run: |
           cd ansible
-          ansible-lint playbooks/*.yml
+          ansible-lint playbooks/*.yml 
+          rm .vault_pass
 
   deploy:
     name: Deploy Application
@@ -59,21 +64,16 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy with Ansible
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
-        run: |
-          cd ansible
-          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass
+      - name: Deploy with Ansible.vault_pass
           
           # We use inventory/hosts.ini but need to dynamically set the host IP from secrets
-          # Or assume hosts.ini uses a variable or we pass -i "host,"
-          # The lab suggests: -i inventory/hosts.ini
-          # But hosts.ini likely contains IP addresses. If we use VM_HOST secret, we should override.
-          
           # Let's create a temporary inventory file with the secret host
           echo "[webservers]" > inventory/ci_hosts.ini
           echo "${{ secrets.VM_HOST }} ansible_user=${{ secrets.VM_USER }}" >> inventory/ci_hosts.ini
+          
+          ansible-playbook playbooks/deploy.yml \
+            -i inventory/ci_hosts.ini
+          rm .{ secrets.VM_HOST }} ansible_user=${{ secrets.VM_USER }}" >> inventory/ci_hosts.ini
           
           ansible-playbook playbooks/deploy.yml \
             -i inventory/ci_hosts.ini \
