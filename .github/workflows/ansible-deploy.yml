@@ -66,13 +66,19 @@ jobs:
       - name: Deploy with Ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
-          ANSIBLE_CONFIG: "ansible.cfg"
+          ANSIBLE_VAULT_PASSWORD_FILE: "/tmp/.vault_pass"
         run: |
-          cd ansible
+          # Debug: check if secret is set (will print literal '***' if valid, or nothing if empty)
+          if [ -z "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" ]; then
+            echo "::error::ANSIBLE_VAULT_PASSWORD secret is not set or empty!"
+            exit 1
+          fi
           
-          # Create vault password file
-          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
-          chmod 600 .vault_pass
+          # Create vault password file in a global location to avoid path issues
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/.vault_pass
+          chmod 600 /tmp/.vault_pass
+          
+          cd ansible
 
           # Create dynamic inventory
           echo "[webservers]" > inventory/ci_hosts.ini
@@ -80,11 +86,10 @@ jobs:
           
           # Run playbook
           ansible-playbook playbooks/deploy.yml \
-            -i inventory/ci_hosts.ini \
-            --vault-password-file .vault_pass
+            -i inventory/ci_hosts.ini
             
           # Cleanup
-          rm .vault_pass
+          rm /tmp/.vault_pass
 
       - name: Verify Deployment
         run: |
