@@ -1,0 +1,86 @@
+name: Ansible Deployment
+
+on:
+  push:
+    branches: [ main, master, lab06 ]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible-deploy.yml'
+  pull_request:
+    branches: [ main, master, lab06 ]
+    paths:
+      - 'ansible/**'
+
+jobs:
+  lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install ansible ansible-lint
+
+      - name: Run ansible-lint
+        run: |
+          cd ansible
+          ansible-lint playbooks/*.yml
+
+  deploy:
+    name: Deploy Application
+    needs: lint
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/lab06'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Install Ansible Galaxy Collections
+        run: ansible-galaxy collection install community.docker community.general
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with Ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          cd ansible
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass
+          
+          # We use inventory/hosts.ini but need to dynamically set the host IP from secrets
+          # Or assume hosts.ini uses a variable or we pass -i "host,"
+          # The lab suggests: -i inventory/hosts.ini
+          # But hosts.ini likely contains IP addresses. If we use VM_HOST secret, we should override.
+          
+          # Let's create a temporary inventory file with the secret host
+          echo "[webservers]" > inventory/ci_hosts.ini
+          echo "${{ secrets.VM_HOST }} ansible_user=${{ secrets.VM_USER }}" >> inventory/ci_hosts.ini
+          
+          ansible-playbook playbooks/deploy.yml \
+            -i inventory/ci_hosts.ini \
+            --vault-password-file /tmp/vault_pass
+          rm /tmp/vault_pass
+
+      - name: Verify Deployment
+        run: |
+          sleep 10  # Wait for app to start
+          curl -f http://${{ secrets.VM_HOST }}:8000/health || exit 1
