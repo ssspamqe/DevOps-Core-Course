@@ -68,10 +68,6 @@
       ansible.builtin.fail:
         msg: "Docker Compose deployment failed."
 
-  tags:
-    - app_deploy
-    - compose
-
 - name: Verification
   tags:
     - app_deploy

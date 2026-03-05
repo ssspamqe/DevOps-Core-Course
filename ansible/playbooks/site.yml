@@ -2,7 +2,7 @@
 # Main playbook — provision and deploy
 - name: Provision web servers
   hosts: webservers
-  become: yes
+  become: true
 
   roles:
     - common
@@ -10,7 +10,7 @@
 
 - name: Deploy application
   hosts: webservers
-  become: yes
+  become: true
 
   roles:
     - web_app
