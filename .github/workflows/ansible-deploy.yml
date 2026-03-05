@@ -66,17 +66,24 @@ jobs:
       - name: Deploy with Ansible
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
+          ANSIBLE_CONFIG: "ansible.cfg"
         run: |
           cd ansible
-          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
           
-          # We use inventory/hosts.ini but need to dynamically set the host IP from secrets
-          # Let's create a temporary inventory file with the secret host
+          # Create vault password file
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
+          chmod 600 .vault_pass
+
+          # Create dynamic inventory
           echo "[webservers]" > inventory/ci_hosts.ini
           echo "${{ secrets.VM_HOST }} ansible_user=${{ secrets.VM_USER }}" >> inventory/ci_hosts.ini
           
+          # Run playbook
           ansible-playbook playbooks/deploy.yml \
-            -i inventory/ci_hosts.ini
+            -i inventory/ci_hosts.ini \
+            --vault-password-file .vault_pass
+            
+          # Cleanup
           rm .vault_pass
 
       - name: Verify Deployment
