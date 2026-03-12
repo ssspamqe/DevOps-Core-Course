@@ -1,0 +1,18 @@
+---
+# Defaults for web_app role
+
+# Build info
+web_app_name: devops-app
+# Adjust this default to match your dockerhub username or keep it generic
+web_app_image: "stepan/devops-app"
+web_app_tag: latest
+
+# Application settings
+web_app_port: 8080
+web_app_internal_port: 8080
+
+# Secrets (should be overridden by vault)
+web_app_secret_key: "default_insecure_key"
+
+# Wipe Logic Control
+web_app_wipe: false
