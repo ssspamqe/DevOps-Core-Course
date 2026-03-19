@@ -1,0 +1,98 @@
+name: Ansible Deployment
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'ansible/**'
+      - '.github/workflows/ansible-deploy.yml'
+  pull_request:
+    branches: [ main, master, lab06 ]
+    paths:
+      - 'ansible/**'
+
+jobs:
+  lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install ansible ansible-lint
+
+      - name: Create Vault Pass File
+        run: |
+           echo "password" > ansible/.vault_pass
+
+      - name: Run ansible-lint
+        run: |
+          cd ansible
+          ansible-lint playbooks/*.yml 
+          rm .vault_pass
+
+  deploy:
+    name: Deploy Application
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Install Ansible Galaxy Collections
+        run: ansible-galaxy collection install community.docker community.general
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with Ansible
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+          # ANSIBLE_CONFIG implicitly used if ansible.cfg is in current dir
+        run: |
+          cd ansible
+          
+          # Debug: check if secret is set
+          if [ -z "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" ]; then
+            echo "::error::ANSIBLE_VAULT_PASSWORD secret is not set or empty!"
+            exit 1
+          fi
+          
+          # Create vault password file exactly where ansible.cfg expects it
+          # Use printf to avoid potential newline issues
+          printf "%s" "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
+          
+          # Create dynamic inventory
+          echo "[webservers]" > inventory/ci_hosts.ini
+          echo "${{ secrets.VM_HOST }} ansible_user=${{ secrets.VM_USER }}" >> inventory/ci_hosts.ini
+          
+          # Run playbook
+          # ansible.cfg will pick up .vault_pass automatically
+          ansible-playbook playbooks/deploy.yml \
+            -i inventory/ci_hosts.ini
+            
+          # Cleanup
+          rm .vault_pass
+
+      - name: Verify Deployment
+        run: |
+          sleep 10  # Wait for app to start
+          curl -f http://${{ secrets.VM_HOST }}:8080/health || exit 1
