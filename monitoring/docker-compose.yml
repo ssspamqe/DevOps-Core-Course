@@ -13,8 +13,8 @@ services:
       - loki-data:/loki
     networks:
       - logging
-    mem_limit: 512m
-    cpus: 0.50
+    mem_limit: 1024m
+    cpus: 1.00
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
       interval: 10s
@@ -38,6 +38,27 @@ services:
     mem_limit: 128m
     cpus: 0.20
 
+  prometheus:
+    image: prom/prometheus:v3.9.0
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.size=10GB'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - logging
+    mem_limit: 1024m
+    cpus: 1.00
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   grafana:
     image: grafana/grafana:12.3.1
     container_name: grafana
@@ -53,6 +74,7 @@ services:
       - grafana-data:/var/lib/grafana
     depends_on:
       - loki
+      - prometheus
     networks:
       - logging
     mem_limit: 512m
@@ -80,12 +102,18 @@ services:
       - logging
     depends_on:
       - promtail
-    mem_limit: 128m
-    cpus: 0.25
+    mem_limit: 256m
+    cpus: 0.50
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   loki-data:
   grafana-data:
+  prometheus-data:
 
 networks:
   logging:
