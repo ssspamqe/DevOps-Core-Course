@@ -1,0 +1,16 @@
+---
+# Main playbook — provision and deploy
+- name: Provision web servers
+  hosts: webservers
+  become: true
+
+  roles:
+    - common
+    - docker
+
+- name: Deploy application
+  hosts: webservers
+  become: true
+
+  roles:
+    - web_app
