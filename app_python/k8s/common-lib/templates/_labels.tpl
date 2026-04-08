@@ -42,3 +42,14 @@ Create chart name and version as used by the chart label.
 {{- define "common.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+Common environment variables — DRY named template for reuse across deployments.
+Usage: {{- include "common.envVars" . | nindent 10 }}
+*/}}
+{{- define "common.envVars" -}}
+- name: APP_ENV
+  value: {{ .Values.environment | default "production" | quote }}
+- name: LOG_LEVEL
+  value: {{ .Values.logLevel | default "info" | quote }}
+{{- end }}
