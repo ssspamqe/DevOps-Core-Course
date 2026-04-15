@@ -9,6 +9,7 @@ import socket
 import platform
 import logging
 import uuid
+import threading
 from datetime import datetime, timezone
 from flask import Flask, jsonify, request, g, Response
 from pythonjsonlogger import jsonlogger
@@ -74,6 +75,36 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 START_TIME = datetime.now(timezone.utc)
+
+# ------------------------------------------------------------------------------
+# Visits Counter
+# ------------------------------------------------------------------------------
+
+VISITS_FILE = os.getenv("VISITS_FILE", "/data/visits")
+_visits_lock = threading.Lock()
+
+
+def _read_visits():
+    try:
+        with open(VISITS_FILE, "r") as f:
+            return int(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def _write_visits(count):
+    os.makedirs(os.path.dirname(VISITS_FILE), exist_ok=True)
+    tmp = VISITS_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(str(count))
+    os.replace(tmp, VISITS_FILE)
+
+
+def _increment_visits():
+    with _visits_lock:
+        count = _read_visits() + 1
+        _write_visits(count)
+        return count
 
 # ------------------------------------------------------------------------------
 # Metrics Setup
@@ -158,6 +189,7 @@ def after_request(response):
 @system_info_duration.time()
 def index():
     endpoint_calls.labels(endpoint='/').inc()
+    visits = _increment_visits()
     now = datetime.now(timezone.utc)
     uptime_seconds = int((now - START_TIME).total_seconds())
     hours = uptime_seconds // 3600
@@ -191,8 +223,10 @@ def index():
             "path": request.path,
             "query": request.query_string.decode("utf-8")
         },
+        "visits": visits,
         "endpoints": [
             {"path": "/", "method": "GET", "description": "Service information"},
+            {"path": "/visits", "method": "GET", "description": "Visit counter"},
             {"path": "/health", "method": "GET", "description": "Health check"},
             {"path": "/metrics", "method": "GET", "description": "Prometheus metrics"}
         ]
@@ -200,6 +234,12 @@ def index():
 
     logger.info("main_endpoint_called", extra={"request_id": g.request_id})
     return jsonify(response_data)
+
+@app.route("/visits")
+def visits():
+    endpoint_calls.labels(endpoint='/visits').inc()
+    count = _read_visits()
+    return jsonify({"visits": count})
 
 @app.route("/health")
 def health():

@@ -13,6 +13,10 @@ secret:
 environment: "production"
 logLevel: "info"
 
+persistence:
+  size: 100Mi
+  storageClass: ""
+
 service:
   type: ClusterIP
   port: 80
@@ -28,14 +32,14 @@ resources:
 
 livenessProbe:
   httpGet:
-    path: /
+    path: /health
     port: 8080
   initialDelaySeconds: 15
   periodSeconds: 10
 
 readinessProbe:
   httpGet:
-    path: /
+    path: /health
     port: 8080
   initialDelaySeconds: 5
   periodSeconds: 5

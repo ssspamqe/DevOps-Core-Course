@@ -101,6 +101,21 @@ Returns comprehensive Service and System information.
 curl http://localhost:8080/
 ```
 
+### `GET /visits`
+Returns the current visit count. The visit counter increments on each request to the root endpoint (`/`) and persists across container restarts via a file stored at `/data/visits`.
+
+**Response Schema:**
+```json
+{
+  "visits": "int"
+}
+```
+
+**Example Request:**
+```bash
+curl http://localhost:8080/visits
+```
+
 ### `GET /health`
 Returns a simple health check status.
 
