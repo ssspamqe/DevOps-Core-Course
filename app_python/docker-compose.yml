@@ -1,0 +1,10 @@
+services:
+  app-python:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      - VISITS_FILE=/data/visits
+    restart: unless-stopped

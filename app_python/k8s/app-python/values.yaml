@@ -1,0 +1,45 @@
+replicaCount: 3
+
+image:
+  repository: ssspamqe/devops-info-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Secret values — use --set or values override to supply real secrets; never commit real values
+secret:
+  username: "app-user"
+  password: "changeme"
+
+environment: "production"
+logLevel: "info"
+
+persistence:
+  size: 100Mi
+  storageClass: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
