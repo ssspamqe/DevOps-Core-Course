@@ -18,5 +18,5 @@ spec:
       restartPolicy: Never
       containers:
       - name: post-install-job
-        image: busybox
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         command: ['sh', '-c', 'echo Post-install validation && sleep 5 && echo Validation passed']

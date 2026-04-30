@@ -18,5 +18,5 @@ spec:
       restartPolicy: Never
       containers:
       - name: pre-install-job
-        image: busybox
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         command: ['sh', '-c', 'echo Pre-install task running && sleep 5 && echo Pre-install completed']

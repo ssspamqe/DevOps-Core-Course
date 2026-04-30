@@ -43,3 +43,26 @@ readinessProbe:
     port: 8080
   initialDelaySeconds: 5
   periodSeconds: 5
+
+rollout:
+  enabled: true
+  strategy: canary
+  revisionHistoryLimit: 2
+  progressDeadlineSeconds: 600
+  progressDeadlineAbort: true
+  canary:
+    maxSurge: 1
+    maxUnavailable: 0
+    pauseDuration: 30s
+    analysis:
+      enabled: true
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      timeoutSeconds: 5
+  blueGreen:
+    autoPromotionEnabled: false
+    previewReplicaCount: 1
+    scaleDownDelaySeconds: 30
+    previewService:
+      type: ClusterIP
