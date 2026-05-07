@@ -1,0 +1,4 @@
+statefulset:
+  enabled: true
+  updateStrategy:
+    type: OnDelete

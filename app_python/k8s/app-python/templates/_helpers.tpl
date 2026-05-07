@@ -5,3 +5,7 @@
 {{- define "app-python.analysisTemplateName" -}}
 {{- printf "%s-success-rate" (include "common.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end }}
+
+{{- define "app-python.headlessServiceName" -}}
+{{- printf "%s-headless" (include "common.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end }}

@@ -1,0 +1,19 @@
+replicaCount: 3
+
+rollout:
+  enabled: false
+
+statefulset:
+  enabled: true
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 2
+
+service:
+  type: ClusterIP
+
+persistence:
+  size: 100Mi
+  storageClass: standard
