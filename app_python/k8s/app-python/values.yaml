@@ -1,0 +1,76 @@
+replicaCount: 3
+
+image:
+  repository: ssspamqe/devops-info-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Secret values — use --set or values override to supply real secrets; never commit real values
+secret:
+  username: "app-user"
+  password: "changeme"
+
+environment: "production"
+logLevel: "info"
+
+persistence:
+  size: 100Mi
+  storageClass: ""
+
+statefulset:
+  enabled: false
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+rollout:
+  enabled: true
+  strategy: canary
+  revisionHistoryLimit: 2
+  progressDeadlineSeconds: 600
+  progressDeadlineAbort: true
+  canary:
+    maxSurge: 1
+    maxUnavailable: 0
+    pauseDuration: 30s
+    analysis:
+      enabled: true
+      interval: 10s
+      count: 3
+      failureLimit: 1
+      timeoutSeconds: 5
+  blueGreen:
+    autoPromotionEnabled: false
+    previewReplicaCount: 1
+    scaleDownDelaySeconds: 30
+    previewService:
+      type: ClusterIP
