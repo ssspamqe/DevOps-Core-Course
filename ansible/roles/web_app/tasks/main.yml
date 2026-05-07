@@ -1,0 +1,95 @@
+---
+# App deployment role tasks — pull and run the containerized Python app
+
+# Wipe logic runs first (when explicitly requested)
+- name: Include wipe tasks
+  tags:
+    - web_app_wipe
+  ansible.builtin.include_tasks: wipe.yml
+
+- name: Install dependencies for Docker Compose module
+  tags:
+    - app_deploy
+    - compose
+  block:
+    - name: Install pip3
+      ansible.builtin.apt:
+        name: python3-pip
+        state: present
+    - name: Install docker-compose Python library
+      ansible.builtin.pip:
+        name: docker-compose
+        state: present
+
+- name: Deploy application with Docker Compose
+  tags:
+    - app_deploy
+    - compose
+  block:
+    - name: Create app directory
+      ansible.builtin.file:
+        path: "/opt/{{ web_app_name }}"
+        state: directory
+        mode: "0755"
+
+    - name: Template docker-compose file
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "/opt/{{ web_app_name }}/docker-compose.yml"
+        mode: "0644"
+
+    - name: Remove any existing container with the same name (cleanup legacy)
+      community.docker.docker_container:
+        name: "{{ web_app_name }}"
+        state: absent
+      # Lint wants failed_when instead of ignore_errors
+      failed_when: false
+
+    - name: Log in to Docker Hub
+      community.docker.docker_login:
+        username: "{{ dockerhub_username | default(omit) }}"
+        password: "{{ dockerhub_password | default(omit) }}"
+      no_log: true
+      when: dockerhub_username is defined and dockerhub_password is defined
+
+    - name: Deploy with docker-compose
+      community.docker.docker_compose_v2:
+        project_src: "/opt/{{ web_app_name }}"
+        state: present
+        pull: always
+        recreate: always
+      register: web_app_compose_output
+
+  rescue:
+    - name: Handle deployment failure
+      ansible.builtin.debug:
+        msg: "Deployment failed! Check logs."
+    - name: Fail the play
+      ansible.builtin.fail:
+        msg: "Docker Compose deployment failed."
+
+- name: Verification
+  tags:
+    - app_deploy
+    - verify
+  block:
+    - name: Wait for application to be ready
+      ansible.builtin.wait_for:
+        port: "{{ web_app_port }}"
+        host: "0.0.0.0"
+        delay: 5
+        timeout: 60
+
+    - name: Verify health endpoint
+      ansible.builtin.uri:
+        url: "http://localhost:{{ web_app_port }}/health"
+        return_content: true
+        status_code: 200
+      register: web_app_health_check
+      until: web_app_health_check.status == 200
+      retries: 5
+      delay: 5
+
+    - name: Display health check result
+      ansible.builtin.debug:
+        var: web_app_health_check.json

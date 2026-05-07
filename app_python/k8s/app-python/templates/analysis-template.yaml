@@ -1,0 +1,20 @@
+{{- if and .Values.rollout.enabled (eq .Values.rollout.strategy "canary") .Values.rollout.canary.analysis.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "app-python.analysisTemplateName" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  metrics:
+    - name: health-status
+      interval: {{ .Values.rollout.canary.analysis.interval }}
+      count: {{ .Values.rollout.canary.analysis.count }}
+      failureLimit: {{ .Values.rollout.canary.analysis.failureLimit }}
+      provider:
+        web:
+          url: http://{{ include "common.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local/health
+          timeoutSeconds: {{ .Values.rollout.canary.analysis.timeoutSeconds }}
+          jsonPath: "{$.status}"
+      successCondition: result == 'healthy'
+{{- end }}
