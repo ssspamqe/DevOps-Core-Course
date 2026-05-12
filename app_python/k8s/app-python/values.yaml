@@ -17,6 +17,23 @@ persistence:
   size: 100Mi
   storageClass: ""
 
+initContainers:
+  enabled: false
+  downloadUrl: https://example.com
+  sharedMountPath: /init-data
+  waitForService:
+    host: kubernetes.default.svc.cluster.local
+    port: 443
+
+monitoring:
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+    scrapeTimeout: 5s
+    path: /metrics
+    additionalLabels:
+      release: monitoring
+
 statefulset:
   enabled: false
   podManagementPolicy: OrderedReady
