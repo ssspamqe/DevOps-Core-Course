@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.fullname" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+  {{- if not (and .Values.rollout.enabled (eq .Values.rollout.strategy "blueGreen")) }}
+  selector:
+    {{- include "common.selectorLabels" . | nindent 4 }}
+  {{- end }}
+{{- if and .Values.rollout.enabled (eq .Values.rollout.strategy "blueGreen") }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app-python.previewServiceName" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.rollout.blueGreen.previewService.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+{{- end }}

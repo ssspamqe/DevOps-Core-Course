@@ -1,0 +1,32 @@
+replicaCount: 3
+
+rollout:
+  enabled: false
+
+statefulset:
+  enabled: true
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+
+service:
+  type: ClusterIP
+
+initContainers:
+  enabled: true
+  downloadUrl: https://example.com
+  sharedMountPath: /init-data
+  waitForService:
+    host: monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local
+    port: 9090
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 5s
+    path: /metrics
+    additionalLabels:
+      release: monitoring
