@@ -11,12 +11,6 @@ The work for this lab consists of two parts:
 
 The application changes were implemented in the existing chart at `app_python/k8s/app-python`.
 
-For this lab I used the Minikube command style required by the assignment:
-
-```bash
-minikube kubectl -- <kubectl-args>
-```
-
 ## 2. Monitoring Stack Components
 
 ### Prometheus Operator
@@ -132,6 +126,10 @@ minikube kubectl -- get secret monitoring-grafana -n monitoring -o jsonpath="{.d
 
 In my cluster the Grafana username was `admin`, and the password was retrieved from the `monitoring-grafana` secret because the chart generated a non-default password.
 
+After port-forwarding the service, Grafana opened successfully and the dashboards were available for the remaining validation steps.
+
+![Grafana home](../docs/screenshots/lab16/grafana-home.png)
+
 ## 6. Validation Performed in This Repository
 
 The following implementation and runtime checks were completed successfully:
@@ -150,8 +148,6 @@ The following implementation and runtime checks were completed successfully:
 - Prometheus confirmed the application target is active
 
 ## 7. Runtime Evidence
-
-I first tried the `virtualbox` driver, but the host did not have VT-x/AMD-v available. After Docker Desktop was started, I switched to the `docker` driver and the cluster came up successfully.
 
 Minikube status after startup:
 
@@ -196,6 +192,8 @@ Observed result summary:
 - Alertmanager pod is `Running`
 - Prometheus Operator pod is `Running`
 - monitoring services such as `monitoring-grafana` and `monitoring-kube-prometheus-prometheus` were created and active
+
+![Monitoring pods and services](../docs/screenshots/lab16/monitoring-pods-services.png)
 
 ### 8.2 Application Evidence
 
@@ -249,6 +247,12 @@ Observed result summary:
 - the `wait-for-service` init container completed before the main container started
 - `cat /init-data/index.html` from the main application container returned the Example Domain HTML page
 
+![Init status](../docs/screenshots/lab16/init-status.png)
+
+![Init download logs](../docs/screenshots/lab16/init-download-logs.png)
+
+![Init data file](../docs/screenshots/lab16/init-data-file.png)
+
 ## 9. Dashboard Questions to Answer in Grafana
 
 Use the following dashboards:
@@ -272,6 +276,8 @@ app-python-monitoring-app-python-2: 0.456 mCPU, 34.00 MiB
 
 I used the pod-level Grafana dashboard and confirmed the same values with Prometheus queries based on `container_cpu_usage_seconds_total` and `container_memory_working_set_bytes`.
 
+![Grafana pod resources](../docs/screenshots/lab16/grafana-pod-resources.png)
+
 ### 9.2 Namespace Analysis
 
 Pods with the highest and lowest CPU usage in `default` namespace:
@@ -283,6 +289,8 @@ Lowest CPU: app-python-monitoring-app-python-2 (0.456 mCPU)
 
 The built-in `Kubernetes / Compute Resources / Namespace (Pods)` dashboard did not populate pod CPU panels correctly in this Minikube environment because the underlying cAdvisor series for the `default` namespace did not carry the `container` label expected by the stock dashboard query. I used Grafana Explore with an equivalent PromQL query that groups by pod without filtering on `container`.
 
+![Grafana namespace CPU](../docs/screenshots/lab16/grafana-namespace-cpu.png)
+
 ### 9.3 Node Metrics
 
 Node memory usage and CPU cores:
@@ -292,6 +300,8 @@ Memory usage: 34.6% (2673 MiB used out of 7730 MiB)
 CPU cores: 6
 ```
 
+![Grafana node metrics](../docs/screenshots/lab16/grafana-node-metrics.png)
+
 ### 9.4 Kubelet
 
 Managed pods and containers:
@@ -300,6 +310,8 @@ Managed pods and containers:
 Pods: 16
 Containers: 29
 ```
+
+![Grafana kubelet](../docs/screenshots/lab16/grafana-kubelet.png)
 
 ### 9.5 Network
 
@@ -319,6 +331,8 @@ Active alerts in Alertmanager:
 ```text
 10 firing alerts at the time of observation
 ```
+
+![Alertmanager alerts](../docs/screenshots/lab16/alertmanager-alerts.png)
 
 ## 10. Bonus Task - Custom Metrics and ServiceMonitor
 
@@ -355,53 +369,11 @@ Observed result summary:
 - the target was discovered through the `ServiceMonitor`
 - the application metrics endpoint `/metrics` was reachable and scrapeable
 
+![Prometheus targets](../docs/screenshots/lab16/prometheus-targets.png)
+
 ## 11. Screenshot Evidence
 
-The following screenshots were captured and stored in `app_python/docs/screenshots/lab16`:
-
-1. Monitoring namespace overview
-
-![Monitoring pods and services](../docs/screenshots/lab16/monitoring-pods-services.png)
-
-2. Grafana home page
-
-![Grafana home](../docs/screenshots/lab16/grafana-home.png)
-
-3. Pod resource dashboard
-
-![Grafana pod resources](../docs/screenshots/lab16/grafana-pod-resources.png)
-
-4. Namespace CPU analysis
-
-![Grafana namespace CPU](../docs/screenshots/lab16/grafana-namespace-cpu.png)
-
-5. Node metrics
-
-![Grafana node metrics](../docs/screenshots/lab16/grafana-node-metrics.png)
-
-6. Kubelet metrics
-
-![Grafana kubelet](../docs/screenshots/lab16/grafana-kubelet.png)
-
-7. Alertmanager alerts
-
-![Alertmanager alerts](../docs/screenshots/lab16/alertmanager-alerts.png)
-
-8. Init container state
-
-![Init status](../docs/screenshots/lab16/init-status.png)
-
-9. Init download logs
-
-![Init download logs](../docs/screenshots/lab16/init-download-logs.png)
-
-10. Shared file visible in the main container
-
-![Init data file](../docs/screenshots/lab16/init-data-file.png)
-
-11. Prometheus scrape target evidence
-
-![Prometheus targets](../docs/screenshots/lab16/prometheus-targets.png)
+The screenshots are now embedded inline next to the relevant validation steps in this report. The image files are stored in `app_python/docs/screenshots/lab16`.
 
 ## 12. Conclusion
 
@@ -412,5 +384,3 @@ The chart implementation for Lab 16 is complete in this repository:
 - the application already exposes Prometheus metrics
 - a dedicated Lab 16 values profile was deployed successfully on Minikube using the `docker` driver
 - the monitoring stack, init-container behavior, and Prometheus scraping were all validated at runtime
-
-The final report now contains the implementation details, runtime verification, monitoring answers, and screenshot evidence required for submission.
