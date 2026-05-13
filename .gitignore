@@ -19,3 +19,10 @@ ansible/inventory/*.pyc
 __pycache__/
 
 .env
+
+# Cloudflare Workers local secrets and state
+edge-api/.dev.vars*
+!edge-api/.dev.vars.example
+edge-api/.env*
+!edge-api/.env.example
+edge-api/.wrangler/
