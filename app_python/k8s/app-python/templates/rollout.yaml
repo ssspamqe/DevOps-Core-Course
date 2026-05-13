@@ -1,0 +1,121 @@
+{{- if and .Values.rollout.enabled (not .Values.statefulset.enabled) }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "common.fullname" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.rollout.revisionHistoryLimit }}
+  progressDeadlineSeconds: {{ .Values.rollout.progressDeadlineSeconds }}
+  progressDeadlineAbort: {{ .Values.rollout.progressDeadlineAbort }}
+  selector:
+    matchLabels:
+      {{- include "common.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config-env: {{ include (print $.Template.BasePath "/configmap-env.yaml") . | sha256sum }}
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "app-python"
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/app-python/config"
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{`{{- with secret "secret/data/app-python/config" -}}`}}
+          APP_USERNAME={{ `{{ .Data.data.username }}` }}
+          APP_PASSWORD={{ `{{ .Data.data.password }}` }}
+          {{`{{- end -}}`}}
+    spec:
+      serviceAccountName: {{ include "common.fullname" . }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "common.fullname" . }}-config
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "common.fullname" . }}-data
+        {{- if .Values.initContainers.enabled }}
+        - name: init-shared-data
+          emptyDir: {}
+        {{- end }}
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: init-download
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - wget -O {{ .Values.initContainers.sharedMountPath }}/index.html {{ .Values.initContainers.downloadUrl }}
+          volumeMounts:
+            - name: init-shared-data
+              mountPath: {{ .Values.initContainers.sharedMountPath }}
+        - name: wait-for-service
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z {{ .Values.initContainers.waitForService.host }} {{ .Values.initContainers.waitForService.port }}; do echo waiting for {{ .Values.initContainers.waitForService.host }}:{{ .Values.initContainers.waitForService.port }}; sleep 2; done
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          envFrom:
+            - secretRef:
+                name: {{ include "common.fullname" . }}-secret
+            - configMapRef:
+                name: {{ include "common.fullname" . }}-env
+          env:
+            {{- include "common.envVars" . | nindent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+            - name: data-volume
+              mountPath: /data
+            {{- if .Values.initContainers.enabled }}
+            - name: init-shared-data
+              mountPath: {{ .Values.initContainers.sharedMountPath }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+  strategy:
+    {{- if eq .Values.rollout.strategy "blueGreen" }}
+    blueGreen:
+      activeService: {{ include "common.fullname" . }}
+      previewService: {{ include "app-python.previewServiceName" . }}
+      autoPromotionEnabled: {{ .Values.rollout.blueGreen.autoPromotionEnabled }}
+      previewReplicaCount: {{ .Values.rollout.blueGreen.previewReplicaCount }}
+      scaleDownDelaySeconds: {{ .Values.rollout.blueGreen.scaleDownDelaySeconds }}
+    {{- else }}
+    canary:
+      maxSurge: {{ .Values.rollout.canary.maxSurge }}
+      maxUnavailable: {{ .Values.rollout.canary.maxUnavailable }}
+      steps:
+        - setWeight: 20
+        - pause: {}
+        {{- if .Values.rollout.canary.analysis.enabled }}
+        - analysis:
+            templates:
+              - templateName: {{ include "app-python.analysisTemplateName" . }}
+        {{- end }}
+        - setWeight: 40
+        - pause:
+            duration: {{ .Values.rollout.canary.pauseDuration }}
+        - setWeight: 60
+        - pause:
+            duration: {{ .Values.rollout.canary.pauseDuration }}
+        - setWeight: 80
+        - pause:
+            duration: {{ .Values.rollout.canary.pauseDuration }}
+        - setWeight: 100
+    {{- end }}
+{{- end }}

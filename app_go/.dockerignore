@@ -1,0 +1,11 @@
+# Git
+.git
+.gitignore
+
+# Go
+bin/
+pkg/
+app
+# Exclude markdown docs and screenshots from the build context
+docs/
+README.md

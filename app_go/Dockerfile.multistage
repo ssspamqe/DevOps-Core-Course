@@ -1,0 +1,31 @@
+# Stage 1: Builder
+FROM golang:1.26-rc-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o app .
+
+# Stage 2: Final Runtime
+FROM alpine:latest
+
+WORKDIR /app
+
+RUN adduser -D -u 1001 appuser
+
+COPY --from=builder /app/app .
+
+RUN chown appuser:appuser /app/app
+
+USER appuser
+
+ENV PORT=8080 \
+    HOST=0.0.0.0
+
+EXPOSE 8080
+
+CMD ["./app"]
