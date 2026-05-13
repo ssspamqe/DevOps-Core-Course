@@ -4,8 +4,6 @@
 
 In this lab I built and deployed a serverless HTTP API on Cloudflare Workers instead of using a Docker-based container platform.
 
-The goal was to keep the same operational ideas from earlier labs such as health checks, configuration, secrets, state, logs, deployments, and public access, while adapting them to the Workers runtime.
-
 The project was created with `create-cloudflare` in a new folder:
 
 ```text
@@ -194,8 +192,6 @@ Public `/edge` response screenshot:
 
 ![workers.dev edge response](docs/screenshots/lab17/workers-dev-edge-response.png)
 
-This confirms that the request was executed at the Cloudflare edge and that Cloudflare added request metadata automatically.
-
 ### How Global Distribution Works
 
 Cloudflare Workers runs code close to the incoming user request on Cloudflare's global network. I do not choose a fixed deployment region such as `eu-central-1` or `us-east-1`. Instead, Cloudflare distributes execution automatically.
@@ -209,8 +205,6 @@ That is why there is no explicit `deploy to 3 regions` step in Workers. The glob
 - `workers.dev` provides a public URL quickly without owning a domain zone in Cloudflare.
 - Routes attach a Worker to traffic for an existing Cloudflare-managed zone.
 - Custom Domains make the Worker the origin for a full domain or subdomain.
-
-For this lab I used the required `workers.dev` deployment.
 
 ## 8. Configuration, Secrets, and Persistence
 
@@ -255,8 +249,8 @@ I verified persistence by deploying the Worker, calling `/counter`, redeploying 
 Observed values after redeploy:
 
 ```text
-5
-6
+11
+12
 ```
 
 KV persistence screenshot after redeploy:
@@ -375,7 +369,6 @@ What felt easier than Kubernetes:
 
 What felt more constrained:
 
-- no Docker runtime model
 - no direct container/process control
 - local behavior around secrets differs from deployed behavior
 - state must be designed around platform bindings instead of local files or mounted volumes
@@ -385,9 +378,3 @@ What changed because Workers is not a Docker host:
 - I wrote a Worker-native request handler instead of packaging an app in a container
 - persistence moved to Workers KV instead of filesystem or PVC storage
 - configuration and secrets came from Wrangler bindings rather than container environment injection and orchestration manifests
-
-## 13. Conclusion
-
-Lab 17 was completed with a working Cloudflare Worker project created by C3, deployed publicly on `workers.dev`, configured with plaintext vars and secrets, backed by Workers KV, and validated through local testing, public route checks, production log tailing, and deployment history.
-
-The final deployed Worker version is `1.1.0`, and the persistence check confirmed that KV state survived redeployment.
