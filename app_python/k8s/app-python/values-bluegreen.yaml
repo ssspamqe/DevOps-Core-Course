@@ -1,0 +1,17 @@
+replicaCount: 3
+
+service:
+  type: ClusterIP
+
+rollout:
+  enabled: true
+  strategy: blueGreen
+  canary:
+    analysis:
+      enabled: false
+  blueGreen:
+    autoPromotionEnabled: false
+    previewReplicaCount: 1
+    scaleDownDelaySeconds: 30
+    previewService:
+      type: ClusterIP

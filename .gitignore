@@ -1,1 +1,28 @@
 test
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+
+# Pulumi
+pulumi/.pulumi/
+pulumi/Pulumi.*.yaml
+pulumi/venv/
+pulumi/.venv/
+
+# Ansible
+*.retry
+.vault_pass
+ansible/inventory/*.pyc
+__pycache__/
+
+.env
+
+# Cloudflare Workers local secrets and state
+edge-api/.dev.vars*
+!edge-api/.dev.vars.example
+edge-api/.env*
+!edge-api/.env.example
+edge-api/.wrangler/
